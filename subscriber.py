@@ -13,12 +13,6 @@ topic4 = "iot/sensor4"
 topic5 = "iot/sensor5"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
-received_data1 = False
-received_data2 = False
-received_data3 = False
-received_data4 = False
-received_data5 = False
-
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -126,27 +120,22 @@ def subscribe(client: mqtt_client):
             cur.execute(
                 "INSERT INTO log_sensor1 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
-            received_data1 = True
         elif (topic == topic2):
             cur.execute(
                 "INSERT INTO log_sensor2 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
-            received_data2 = True
         elif (topic == topic3):
             cur.execute(
                 "INSERT INTO log_sensor3 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
-            received_data3 = True
         elif (topic == topic4):
             cur.execute(
                 "INSERT INTO log_sensor4 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
-            received_data4 = True
         elif (topic == topic5):
             cur.execute(
                 "INSERT INTO log_sensor5 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
-            received_data4 = True
 
     query_insert = f"""
     INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah)
