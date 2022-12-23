@@ -13,6 +13,12 @@ topic4 = "iot/sensor4"
 topic5 = "iot/sensor5"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
+received_data1 = False
+received_data2 = False
+received_data3 = False
+received_data4 = False
+received_data5 = False
+
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -28,7 +34,7 @@ def connect_mqtt() -> mqtt_client:
     return client
 
 
-con = sqlite3.connect("./log_sensor.sqlite")
+con = sqlite3.connect("log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor1 = '''CREATE TABLE IF NOT EXISTS log_sensor1 (
 topic TEXT NOT NULL,
@@ -39,7 +45,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor1)
 con.commit()
 
-con = sqlite3.connect("./log_sensor.sqlite")
+con = sqlite3.connect("log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor2 = '''CREATE TABLE IF NOT EXISTS log_sensor2 (
 topic TEXT NOT NULL,
@@ -50,7 +56,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor2)
 con.commit()
 
-con = sqlite3.connect("./log_sensor.sqlite")
+con = sqlite3.connect("log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor3 = '''CREATE TABLE IF NOT EXISTS log_sensor3 (
 topic TEXT NOT NULL,
@@ -61,7 +67,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor3)
 con.commit()
 
-con = sqlite3.connect("./log_sensor.sqlite")
+con = sqlite3.connect("log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor4 = '''CREATE TABLE IF NOT EXISTS log_sensor4 (
 topic TEXT NOT NULL,
@@ -72,7 +78,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor4)
 con.commit()
 
-con = sqlite3.connect("./log_sensor.sqlite")
+con = sqlite3.connect("log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor5 = '''CREATE TABLE IF NOT EXISTS log_sensor5 (
 topic TEXT NOT NULL,
@@ -83,7 +89,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor5)
 con.commit()
 
-con = sqlite3.connect("./log_sensor.sqlite")
+con = sqlite3.connect("log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_gabungan = '''CREATE TABLE IF NOT EXISTS log_sensor_gabungan (
 suhu_kiri_bawah bawah REAL NOT NULL,
@@ -102,6 +108,12 @@ con.commit()
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
+        global received_data1
+        global received_data2
+        global received_data3
+        global received_data4
+        global received_data5
+
         print(f"Received {msg.payload.decode()} from {msg.topic} topic")
         data = json.loads(msg.payload.decode())
         topic = data['topic']
@@ -114,22 +126,58 @@ def subscribe(client: mqtt_client):
             cur.execute(
                 "INSERT INTO log_sensor1 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
+            received_data1 = True
         elif (topic == topic2):
             cur.execute(
                 "INSERT INTO log_sensor2 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
+            received_data2 = True
         elif (topic == topic3):
             cur.execute(
                 "INSERT INTO log_sensor3 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
+            received_data3 = True
         elif (topic == topic4):
             cur.execute(
                 "INSERT INTO log_sensor4 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
+            received_data4 = True
         elif (topic == topic5):
             cur.execute(
                 "INSERT INTO log_sensor5 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
+            received_data4 = True
+
+    query_insert = f"""
+    INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah)
+    SELECT suhu, kelembapan, 0, 0, 0, 0, 0, 0, 0, 0 FROM log_sensor1
+    UNION ALL
+    SELECT 0, 0, suhu, kelembapan, 0, 0, 0, 0, 0, 0 FROM log_sensor2
+    UNION ALL
+    SELECT 0, 0, 0, 0, suhu, kelembapan, 0, 0, 0, 0 FROM log_sensor3
+    UNION ALL
+    SELECT 0, 0, 0, 0, 0, 0, suhu, kelembapan, 0, 0 FROM log_sensor4
+    UNION ALL
+    SELECT 0, 0, 0, 0, 0, 0, 0, 0, suhu, kelembapan FROM log_sensor5
+    """
+    cur.execute(query_insert)
+    con.commit()
+
+    cur.execute(query_insert)
+    con.commit()
+
+    # while not (received_data1 and received_data2 and received_data3 and received_data4 and received_data5):
+    #     tables = ["log_sensor1", "log_sensor2", "log_sensor3", "log_sensor4", "log_sensor5"]
+    #     for table in tables:
+    #         query = f"SELECT suhu, kelembapan FROM {table}"
+    #         cur.execute(query)
+    #         data = cur.fetchone()
+    #         for row in data:
+    #             suhu = row[0]
+    #             kelembapan = row[1]
+    #             query_insert = f"INSERT INTO log_sensor_gabungan (suhu, kelembapan) VALUES ({suhu}, {kelembapan})"
+    #             cur.execute(query_insert)
+    #             con.commit()
 
     client.subscribe(topic1)
     client.subscribe(topic2)
@@ -137,6 +185,7 @@ def subscribe(client: mqtt_client):
     client.subscribe(topic4)
     client.subscribe(topic5)
     client.on_message = on_message
+
 
 def run():
     client = connect_mqtt()
