@@ -28,7 +28,7 @@ def connect_mqtt() -> mqtt_client:
     return client
 
 
-con = sqlite3.connect("log_sensor.sqlite")
+con = sqlite3.connect("D:\C\Matkul\Semester 5\IOT\FP\monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor1 = '''CREATE TABLE IF NOT EXISTS log_sensor1 (
 topic TEXT NOT NULL,
@@ -115,6 +115,7 @@ def subscribe(client: mqtt_client):
         lokasi = data['lokasi']
         suhu = data['suhu']
         kelembapan = data['kelembapan']
+
         data_sensor_val = (topic, timestamp, lokasi, suhu, kelembapan)
         if (topic == topic1):
             cur.execute(
@@ -136,24 +137,40 @@ def subscribe(client: mqtt_client):
             cur.execute(
                 "INSERT INTO log_sensor5 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
+            cur.execute(
+                """
+                INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah) 
+                VALUES (
+                    (select suhu from log_sensor1 order by timestamp DESC limit 1), 
+                    (select kelembapan from log_sensor1 order by timestamp DESC limit 1),
+                    (select suhu from log_sensor2 order by timestamp DESC limit 1), 
+                    (select kelembapan from log_sensor2 order by timestamp DESC limit 1),
+                    (select suhu from log_sensor3 order by timestamp DESC limit 1), 
+                    (select kelembapan from log_sensor3 order by timestamp DESC limit 1),
+                    (select suhu from log_sensor4 order by timestamp DESC limit 1), 
+                    (select kelembapan from log_sensor4 order by timestamp DESC limit 1),
+                    (select suhu from log_sensor5 order by timestamp DESC limit 1), 
+                    (select kelembapan from log_sensor5 order by timestamp DESC limit 1)
+                );""")
+            con.commit()
 
-    query_insert = f"""
-    INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah)
-    SELECT suhu, kelembapan, 0, 0, 0, 0, 0, 0, 0, 0 FROM log_sensor1
-    UNION ALL
-    SELECT 0, 0, suhu, kelembapan, 0, 0, 0, 0, 0, 0 FROM log_sensor2
-    UNION ALL
-    SELECT 0, 0, 0, 0, suhu, kelembapan, 0, 0, 0, 0 FROM log_sensor3
-    UNION ALL
-    SELECT 0, 0, 0, 0, 0, 0, suhu, kelembapan, 0, 0 FROM log_sensor4
-    UNION ALL
-    SELECT 0, 0, 0, 0, 0, 0, 0, 0, suhu, kelembapan FROM log_sensor5
-    """
-    cur.execute(query_insert)
-    con.commit()
+    # query_insert = f"""
+    # INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, # suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah) 
+    # SELECT suhu, kelembapan, 0, 0, 0, 0, 0, 0, 0, 0 FROM log_sensor1
+    # UNION ALL
+    # SELECT 0, 0, suhu, kelembapan, 0, 0, 0, 0, 0, 0 FROM log_sensor2
+    # UNION ALL
+    # SELECT 0, 0, 0, 0, suhu, kelembapan, 0, 0, 0, 0 FROM log_sensor3
+    # UNION ALL
+    # SELECT 0, 0, 0, 0, 0, 0, suhu, kelembapan, 0, 0 FROM log_sensor4
+    # UNION ALL
+    # SELECT 0, 0, 0, 0, 0, 0, 0, 0, suhu, kelembapan FROM log_sensor5
+    # """
+    # cur.execute(query_insert)
+    # con.commit()
 
-    cur.execute(query_insert)
-    con.commit()
+    # cur.execute(query_insert)
+    # con.commit()
 
     # while not (received_data1 and received_data2 and received_data3 and received_data4 and received_data5):
     #     tables = ["log_sensor1", "log_sensor2", "log_sensor3", "log_sensor4", "log_sensor5"]
