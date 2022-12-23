@@ -28,7 +28,7 @@ def connect_mqtt() -> mqtt_client:
     return client
 
 
-con = sqlite3.connect("D:\C\Matkul\Semester 5\IOT\FP\monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
+con = sqlite3.connect("D:/Kuliah/Mata Kuliah/Semester 5/Internet of Things/Praktikum/monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor1 = '''CREATE TABLE IF NOT EXISTS log_sensor1 (
 topic TEXT NOT NULL,
@@ -39,7 +39,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor1)
 con.commit()
 
-con = sqlite3.connect("log_sensor.sqlite")
+con = sqlite3.connect("D:/Kuliah/Mata Kuliah/Semester 5/Internet of Things/Praktikum/monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor2 = '''CREATE TABLE IF NOT EXISTS log_sensor2 (
 topic TEXT NOT NULL,
@@ -50,7 +50,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor2)
 con.commit()
 
-con = sqlite3.connect("log_sensor.sqlite")
+con = sqlite3.connect("D:/Kuliah/Mata Kuliah/Semester 5/Internet of Things/Praktikum/monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor3 = '''CREATE TABLE IF NOT EXISTS log_sensor3 (
 topic TEXT NOT NULL,
@@ -61,7 +61,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor3)
 con.commit()
 
-con = sqlite3.connect("log_sensor.sqlite")
+con = sqlite3.connect("D:/Kuliah/Mata Kuliah/Semester 5/Internet of Things/Praktikum/monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor4 = '''CREATE TABLE IF NOT EXISTS log_sensor4 (
 topic TEXT NOT NULL,
@@ -72,7 +72,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor4)
 con.commit()
 
-con = sqlite3.connect("log_sensor.sqlite")
+con = sqlite3.connect("D:/Kuliah/Mata Kuliah/Semester 5/Internet of Things/Praktikum/monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor5 = '''CREATE TABLE IF NOT EXISTS log_sensor5 (
 topic TEXT NOT NULL,
@@ -83,7 +83,7 @@ kelembapan REAL NOT NULL);'''
 cur.execute(buat_tabel_log_sensor5)
 con.commit()
 
-con = sqlite3.connect("log_sensor.sqlite")
+con = sqlite3.connect("D:/Kuliah/Mata Kuliah/Semester 5/Internet of Things/Praktikum/monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_gabungan = '''CREATE TABLE IF NOT EXISTS log_sensor_gabungan (
 suhu_kiri_bawah bawah REAL NOT NULL,
