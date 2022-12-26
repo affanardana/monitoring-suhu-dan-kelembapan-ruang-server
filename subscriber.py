@@ -5,6 +5,7 @@ import time
 import sqlite3
 import json
 
+
 broker = "localhost"
 port = 1883
 topic1 = "iot/sensor1"
