@@ -1,8 +1,10 @@
 from paho.mqtt import client as mqtt_client
+from fuzzywuzzy import fuzz
 import random
 import time
 import sqlite3
 import json
+
 
 broker = "localhost"
 port = 1883
@@ -13,6 +15,35 @@ topic4 = "iot/sensor4"
 topic5 = "iot/sensor5"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
+# Menentukan variabel fuzzy
+temperature_low = 25
+temperature_medium = (25, 35)
+temperature_high = 35
+humidity_low = 25
+humidity_medium = (25, 50)
+humidity_high = 50
+
+# Fungsi untuk menentukan kondisi 
+def determine_weather(temp, humidity):
+  if temp <= temperature_low and humidity <= humidity_low:
+    return "Dingin dan kering"
+  elif temp >= temperature_medium[0] and temp <= temperature_medium[1] and humidity <= humidity_low:
+    return "Normal dan kering"
+  elif temp >= temperature_high and humidity <= humidity_low:
+    return "Panas dan kering"
+  elif temp <= temperature_low and humidity >= humidity_medium[0] and humidity <= humidity_medium[1]:
+    return "Dingin dan agak lembab"
+  elif temp >= temperature_medium[0] and temp <= temperature_medium[1] and humidity >= humidity_medium[0] and humidity <= humidity_medium[1]:
+    return "Normal dan agak lembab"
+  elif temp >= temperature_high and humidity >= humidity_medium[0] and humidity <= humidity_medium[1]:
+    return "Panas dan agak lembab"
+  elif temp <= temperature_low and humidity >= humidity_high:
+    return "Dingin dan lembab"
+  elif temp >= temperature_medium[0] and temp <= temperature_medium[1] and humidity >= humidity_high:
+    return "Normal dan lembab"
+  elif temp >= temperature_high and humidity >= humidity_high:
+    return "Panas dan lembab"
+    
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -85,29 +116,17 @@ con.commit()
 
 con = sqlite3.connect("D:/Kuliah/Mata Kuliah/Semester 5/Internet of Things/Praktikum/monitoring-suhu-dan-kelembapan-ruang-server/log_sensor.sqlite")
 cur = con.cursor()
-buat_tabel_log_gabungan = '''CREATE TABLE IF NOT EXISTS log_sensor_gabungan (
-suhu_kiri_bawah bawah REAL NOT NULL,
-kelembapan_kiri_bawah REAL NOT NULL,
-suhu_kanan_bawah REAL NOT NULL,
-kelembapan_kanan_bawah REAL NOT NULL,
-suhu_kiri_atas REAL NOT NULL,
-kelembapan_kiri_atas REAL NOT NULL,
-suhu_kanan_atas REAL NOT NULL,
-kelembapan_kanan_atas REAL NOT NULL,
-suhu_tengah REAL NOT NULL,
-kelembapan_tengah REAL NOT NULL);'''
+buat_tabel_log_gabungan = '''CREATE TABLE IF NOT EXISTS log_mean (
+mean_suhu bawah REAL NOT NULL,
+mean_kelembapan REAL NOT NULL,
+timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);'''
 cur.execute(buat_tabel_log_gabungan)
 con.commit()
 
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        global received_data1
-        global received_data2
-        global received_data3
-        global received_data4
-        global received_data5
-
+        
         print(f"Received {msg.payload.decode()} from {msg.topic} topic")
         data = json.loads(msg.payload.decode())
         topic = data['topic']
@@ -139,20 +158,27 @@ def subscribe(client: mqtt_client):
             con.commit()
             cur.execute(
                 """
-                INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah) 
+                INSERT INTO log_mean (mean_suhu, mean_kelembapan) 
                 VALUES (
-                    (select suhu from log_sensor1 order by timestamp DESC limit 1), 
-                    (select kelembapan from log_sensor1 order by timestamp DESC limit 1),
-                    (select suhu from log_sensor2 order by timestamp DESC limit 1), 
-                    (select kelembapan from log_sensor2 order by timestamp DESC limit 1),
-                    (select suhu from log_sensor3 order by timestamp DESC limit 1), 
-                    (select kelembapan from log_sensor3 order by timestamp DESC limit 1),
-                    (select suhu from log_sensor4 order by timestamp DESC limit 1), 
-                    (select kelembapan from log_sensor4 order by timestamp DESC limit 1),
-                    (select suhu from log_sensor5 order by timestamp DESC limit 1), 
-                    (select kelembapan from log_sensor5 order by timestamp DESC limit 1)
+                    ((select suhu from log_sensor1 order by timestamp DESC limit 1)+
+                    (select suhu from log_sensor3 order by timestamp DESC limit 1)+ 
+                    (select suhu from log_sensor4 order by timestamp DESC limit 1)+ 
+                    (select suhu from log_sensor5 order by timestamp DESC limit 1)+ 
+                    (select suhu from log_sensor2 order by timestamp DESC limit 1))/5, 
+                    ((select kelembapan from log_sensor1 order by timestamp DESC limit 1)+
+                    (select kelembapan from log_sensor2 order by timestamp DESC limit 1)+
+                    (select kelembapan from log_sensor3 order by timestamp DESC limit 1)+
+                    (select kelembapan from log_sensor4 order by timestamp DESC limit 1)+
+                    (select kelembapan from log_sensor5 order by timestamp DESC limit 1))/5
                 );""")
             con.commit()
+            cur.execute("""
+                select mean_suhu, mean_kelembapan from log_mean order by timestamp DESC limit 1
+            """)
+            con.commit()
+
+            tuple = cur.fetchone()
+            print(determine_weather(tuple[0], tuple[1]))
 
     # query_insert = f"""
     # INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, # suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah) 
@@ -191,6 +217,8 @@ def subscribe(client: mqtt_client):
     client.subscribe(topic4)
     client.subscribe(topic5)
     client.on_message = on_message
+
+
 
 
 def run():
