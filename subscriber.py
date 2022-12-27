@@ -19,7 +19,7 @@ client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 # New Antecedent/Consequent objects hold universe variables and membership
 # functions
-suhu = ctrl.Antecedent(np.arange(0,31,1), 'suhu')
+suhu = ctrl.Antecedent(np.arange(0,34,1), 'suhu')
 kelembapan = ctrl.Antecedent(np.arange(0,101,1), 'kelembapan')
 kondisi = ctrl.Consequent(np.arange(0,11,1), 'kondisi')
 
@@ -252,5 +252,8 @@ def run():
 
 
 if __name__ == '__main__':
-
+    suhu.view()
+    kelembapan.view()
+    kondisi.view()
+    plt.show()
     run()
