@@ -235,37 +235,6 @@ def subscribe(client: mqtt_client):
                 print('kondisi ruangan baik')
             
 
-    # query_insert = f"""
-    # INSERT INTO log_sensor_gabungan (suhu_kiri_bawah, kelembapan_kiri_bawah, suhu_kanan_bawah, kelembapan_kanan_bawah, suhu_kiri_atas, kelembapan_kiri_atas, # suhu_kanan_atas, kelembapan_kanan_atas, suhu_tengah, kelembapan_tengah) 
-    # SELECT suhu, kelembapan, 0, 0, 0, 0, 0, 0, 0, 0 FROM log_sensor1
-    # UNION ALL
-    # SELECT 0, 0, suhu, kelembapan, 0, 0, 0, 0, 0, 0 FROM log_sensor2
-    # UNION ALL
-    # SELECT 0, 0, 0, 0, suhu, kelembapan, 0, 0, 0, 0 FROM log_sensor3
-    # UNION ALL
-    # SELECT 0, 0, 0, 0, 0, 0, suhu, kelembapan, 0, 0 FROM log_sensor4
-    # UNION ALL
-    # SELECT 0, 0, 0, 0, 0, 0, 0, 0, suhu, kelembapan FROM log_sensor5
-    # """
-    # cur.execute(query_insert)
-    # con.commit()
-
-    # cur.execute(query_insert)
-    # con.commit()
-
-    # while not (received_data1 and received_data2 and received_data3 and received_data4 and received_data5):
-    #     tables = ["log_sensor1", "log_sensor2", "log_sensor3", "log_sensor4", "log_sensor5"]
-    #     for table in tables:
-    #         query = f"SELECT suhu, kelembapan FROM {table}"
-    #         cur.execute(query)
-    #         data = cur.fetchone()
-    #         for row in data:
-    #             suhu = row[0]
-    #             kelembapan = row[1]
-    #             query_insert = f"INSERT INTO log_sensor_gabungan (suhu, kelembapan) VALUES ({suhu}, {kelembapan})"
-    #             cur.execute(query_insert)
-    #             con.commit()
-
     client.subscribe(topic1)
     client.subscribe(topic2)
     client.subscribe(topic3)
