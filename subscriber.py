@@ -7,6 +7,8 @@ import time
 import sqlite3
 import json
 import matplotlib.pyplot as plt
+from tkinter import *
+from PIL import Image
 
 broker = "localhost"
 port = 1883
@@ -57,36 +59,6 @@ kondisi_ctrl = ctrl.ControlSystem([
 
 kondisi_fuzzy = ctrl.ControlSystemSimulation(kondisi_ctrl)
 
-# Menentukan variabel fuzzy
-# temperature_low = (0,25)
-# temperature_medium = (25, 35)
-# temperature_high = (35, 50)
-# humidity_low = 25
-# humidity_medium = (25, 50)
-# humidity_high = 50, 100
-
-# Fungsi untuk menentukan kondisi 
-# def determine_weather(temp, humidity):
-#   if temp <= temperature_low and humidity <= humidity_low:
-#     return "Dingin dan kering"
-#   elif temp >= temperature_medium[0] and temp <= temperature_medium[1] and humidity <= humidity_low:
-#     return "Normal dan kering"
-#   elif temp >= temperature_high and humidity <= humidity_low:
-#     return "Panas dan kering"
-#   elif temp <= temperature_low and humidity >= humidity_medium[0] and humidity <= humidity_medium[1]:
-#     return "Dingin dan agak lembab"
-#   elif temp >= temperature_medium[0] and temp <= temperature_medium[1] and humidity >= humidity_medium[0] and humidity <= humidity_medium[1]:
-#     return "Normal dan agak lembab"
-#   elif temp >= temperature_high and humidity >= humidity_medium[0] and humidity <= humidity_medium[1]:
-#     return "Panas dan agak lembab"
-#   elif temp <= temperature_low and humidity >= humidity_high:
-#     return "Dingin dan lembab"
-#   elif temp >= temperature_medium[0] and temp <= temperature_medium[1] and humidity >= humidity_high:
-#     return "Normal dan lembab"
-#   elif temp >= temperature_high and humidity >= humidity_high:
-#     return "Panas dan lembab"
-    
-
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -95,12 +67,13 @@ def connect_mqtt() -> mqtt_client:
             print("Failed to connect, return code %d\n", rc)
 
     client = mqtt_client.Client(client_id)
-    # client.username_pw_set(username, password) #auth service
+
     client.on_connect = on_connect
     client.connect(broker, port)
     return client
 
 
+# buat tabel
 con = sqlite3.connect("log_sensor.sqlite")
 cur = con.cursor()
 buat_tabel_log_sensor1 = '''CREATE TABLE IF NOT EXISTS log_sensor1 (
@@ -223,7 +196,6 @@ def subscribe(client: mqtt_client):
             kondisi_fuzzy.input['suhu'] = tuple[0]
             kondisi_fuzzy.input['kelembapan'] = tuple[1]
 
-            # Crunch the numbers
             kondisi_fuzzy.compute()
             score = kondisi_fuzzy.output['kondisi']
             print(score)
@@ -233,7 +205,7 @@ def subscribe(client: mqtt_client):
                 print('kondisi ruangan lumayan baik')
             else:
                 print('kondisi ruangan baik')
-            
+
 
     client.subscribe(topic1)
     client.subscribe(topic2)
@@ -252,8 +224,15 @@ def run():
 
 
 if __name__ == '__main__':
-    suhu.view()
-    kelembapan.view()
-    kondisi.view()
-    plt.show()
+    # dashboard
+    window = Tk()
+    window.title("MQTT Dashboard")
+    window.geometry('500x440')  # Width, Height
+    window.resizable(False, False)  # Width, Height
+    window.configure(bg="white")
+    window.mainloop()
+    # suhu.view()
+    # kelembapan.view()
+    # kondisi.view()
+    # plt.show()
     run()
