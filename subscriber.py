@@ -68,7 +68,7 @@ kondisi_fuzzy = ctrl.ControlSystemSimulation(kondisi_ctrl)
 # dashboard
 # window
 window = Tk()
-window.title("MQTT Dashboard")
+window.title("Sistem Monitoring Suhu dan Kelembapan Ruang Server")
 window.geometry('1130x600')  # Width, Height
 window.resizable(False, False)  # Width, Height
 window.configure(bg="white")
