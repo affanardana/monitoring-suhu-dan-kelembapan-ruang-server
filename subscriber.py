@@ -307,7 +307,6 @@ def subscribe(client: mqtt_client):
                 con.commit()
                 tsk[i] = cur.fetchone()
 
-            # Crunch the numbers
             kondisi_fuzzy.compute()
             score = kondisi_fuzzy.output['kondisi']
             print(score)
