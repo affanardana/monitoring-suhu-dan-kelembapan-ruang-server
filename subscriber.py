@@ -475,6 +475,7 @@ def update_dashboard(tsk, score, tskr):
 
     canvas_b.create_text(940, 65, text="Kondisi Ruangan", font=(
         "Helvetica", 20), fill="white", anchor="s")
+        
 
     if (score < 3.33):
         canvas_b.create_image(770, 111, anchor=NW, image=img_buruk)
