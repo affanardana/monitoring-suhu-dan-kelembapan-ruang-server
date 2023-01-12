@@ -99,7 +99,7 @@ rezizer.save("hum_img_resized.png")
 # box
 # gambar box
 rezizer = Image.open("box.png")
-rezizer = rezizer.resize((210, 130))
+rezizer = rezizer.resize((210, 160))
 rezizer.save("box_resized.png")
 
 # textBox
@@ -276,47 +276,36 @@ def subscribe(client: mqtt_client):
             cur.execute(
                 "INSERT INTO log_sensor5 (topic, timestamp, lokasi, suhu, kelembapan) VALUES (?, ?, ?, ?, ?);", data_sensor_val)
             con.commit()
-            cur.execute(
-                """
-                INSERT INTO log_mean (mean_suhu, mean_kelembapan) 
-                VALUES (
-                    ((select suhu from log_sensor1 order by timestamp DESC limit 1)+
-                    (select suhu from log_sensor3 order by timestamp DESC limit 1)+ 
-                    (select suhu from log_sensor4 order by timestamp DESC limit 1)+ 
-                    (select suhu from log_sensor5 order by timestamp DESC limit 1)+ 
-                    (select suhu from log_sensor2 order by timestamp DESC limit 1))/5, 
-                    ((select kelembapan from log_sensor1 order by timestamp DESC limit 1)+
-                    (select kelembapan from log_sensor2 order by timestamp DESC limit 1)+
-                    (select kelembapan from log_sensor3 order by timestamp DESC limit 1)+
-                    (select kelembapan from log_sensor4 order by timestamp DESC limit 1)+
-                    (select kelembapan from log_sensor5 order by timestamp DESC limit 1))/5
-                );""")
-            con.commit()
-            cur.execute("""
-                select mean_suhu, mean_kelembapan from log_mean order by timestamp DESC limit 1
-            """)
-            con.commit()
-
-            tuple = cur.fetchone()
-            kondisi_fuzzy.input['suhu'] = tuple[0]
-            kondisi_fuzzy.input['kelembapan'] = tuple[1]
-            tsk = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
-            for i in range(5):
+            tsk = []
+            for i in range(0,5):
                 cur.execute("select suhu, kelembapan from log_sensor" +
                             str(i+1)+" order by timestamp DESC limit 1")
                 con.commit()
-                tsk[i] = cur.fetchone()
+                tsk.append(cur.fetchone())
+            # merata-rata semua data terakhir yang masuk
+            mean = ((tsk[0][0]+tsk[1][0]+tsk[2][0]+tsk[3][0]+tsk[4][0])/5, (tsk[0][1]+tsk[1][1]+tsk[2][1]+tsk[3][1]+tsk[4][1])/5)
+            # menyimpan data rata-rata 
+            cur.execute(
+                """
+                INSERT INTO log_mean (mean_suhu, mean_kelembapan) 
+                VALUES (?, ?);
+            """, mean)
+            con.commit()
+            kondisi_fuzzy.input['suhu'] = mean[0]
+            kondisi_fuzzy.input['kelembapan'] = mean[1]
 
+            # Mencari nilai hasil defuzzyfikasi
             kondisi_fuzzy.compute()
             score = kondisi_fuzzy.output['kondisi']
             print(score)
-            update_dashboard(tsk, score, tuple)
+            update_dashboard(tsk, score, mean)
 
             if (score < 3.33):
                 print('Kondisi ruangan buruk')
             elif (score < 6.67):
                 print('kondisi ruangan lumayan baik')
             else:
+                print('kondisi ruangan baik')
                 print('kondisi ruangan baik')
 
     client.subscribe(topic1)
@@ -334,49 +323,62 @@ def create_dashboard():
     canvas_b.create_image(0, 0, anchor=NW, image=img_background)
 
     # sensor 1
-    canvas_b.create_image(20, 440, anchor=NW, image=img_box)
-    canvas_b.create_image(35, 460, anchor=NW, image=img_suhu)
-    canvas_b.create_image(40, 510, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(90, 485, text='...'+" °C",
+    canvas_b.create_image(20, 430, anchor=NW, image=img_box)
+    canvas_b.create_image(35, 450, anchor=NW, image=img_suhu)
+    canvas_b.create_image(40, 500, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(90, 475, text='...'+" °C",
                          font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(87, 535, text='...'+" %",
+    canvas_b.create_text(87, 525, text='...'+" %",
                          font=("Helvetica", 20), fill="white", anchor="w")
+    
+    canvas_b.create_text(47, 560, text='Kiri Bawah',
+                         font=("Helvetica", 20), fill="white", anchor="w")
+                         
 
     # sensor 2
-    canvas_b.create_image(500, 440, anchor=NW, image=img_box)
-    canvas_b.create_image(515, 460, anchor=NW, image=img_suhu)
-    canvas_b.create_image(520, 510, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(570, 480, text='...'+" °C",
+    canvas_b.create_image(500, 430, anchor=NW, image=img_box)
+    canvas_b.create_image(515, 450, anchor=NW, image=img_suhu)
+    canvas_b.create_image(520, 500, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(570, 470, text='...'+" °C",
                          font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(567, 535, text='...'+" %",
+    canvas_b.create_text(567, 525, text='...'+" %",
+                         font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(527, 560, text='Kanan Bawah',
                          font=("Helvetica", 20), fill="white", anchor="w")
 
     # sensor 3
-    canvas_b.create_image(20, 30, anchor=NW, image=img_box)
-    canvas_b.create_image(35, 50, anchor=NW, image=img_suhu)
-    canvas_b.create_image(40, 100, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(90, 75, text='...'+" °C",
+    canvas_b.create_image(20, 20, anchor=NW, image=img_box)
+    canvas_b.create_image(35, 40, anchor=NW, image=img_suhu)
+    canvas_b.create_image(40, 90, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(90, 65, text='...'+" °C",
                          font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(87, 125, text='...'+" %",
+    canvas_b.create_text(87, 115, text='...'+" %",
+                         font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(47, 150, text='Kiri Atas',
                          font=("Helvetica", 20), fill="white", anchor="w")
 
     # sensor 4
-    canvas_b.create_image(500, 30, anchor=NW, image=img_box)
-    canvas_b.create_image(515, 50, anchor=NW, image=img_suhu)
-    canvas_b.create_image(520, 100, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(570, 70, text='...'+" °C",
+    canvas_b.create_image(500, 20, anchor=NW, image=img_box)
+    canvas_b.create_image(515, 30, anchor=NW, image=img_suhu)
+    canvas_b.create_image(520, 90, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(570, 60, text='...'+" °C",
                          font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(567, 120, text='...'+" %",
+    canvas_b.create_text(567, 110, text='...'+" %",
+                         font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(527, 160, text='Kanan Atas',
                          font=("Helvetica", 20), fill="white", anchor="w")
 
     # sensor 5
-    canvas_b.create_image(260, 235, anchor=NW, image=img_box)
-    canvas_b.create_image(275, 255, anchor=NW, image=img_suhu)
-    canvas_b.create_image(280, 305, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(325, 275, text='...'+" °C",
+    canvas_b.create_image(260, 225, anchor=NW, image=img_box)
+    canvas_b.create_image(275, 245, anchor=NW, image=img_suhu)
+    canvas_b.create_image(280, 295, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(325, 265, text='...'+" °C",
                          font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(322, 325, text='...'+" %",
+    canvas_b.create_text(322, 315, text='...'+" %",
                          font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(287, 355, text='Tengah',
+                         font=("Helvetica", 20), fill="white", anchor="w")
+
 
     canvas_b.create_image(730, 0, anchor=NW, image=img_pembatas)
 
@@ -413,49 +415,59 @@ def update_dashboard(tsk, score, tskr):
     canvas_b.create_image(0, 0, anchor=NW, image=img_background)
 
     # sensor 1
-    canvas_b.create_image(20, 440, anchor=NW, image=img_box)
-    canvas_b.create_image(35, 460, anchor=NW, image=img_suhu)
-    canvas_b.create_image(40, 510, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(90, 485, text=str(
+    canvas_b.create_image(20, 430, anchor=NW, image=img_box)
+    canvas_b.create_image(35, 450, anchor=NW, image=img_suhu)
+    canvas_b.create_image(40, 500, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(90, 475, text=str(
         tsk[0][0])+" °C", font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(87, 535, text=str(
+    canvas_b.create_text(87, 525, text=str(
         tsk[0][1])+" %", font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(47, 560, text='Kiri Bawah',
+                         font=("Helvetica", 20), fill="white", anchor="w")
 
     # sensor 2
-    canvas_b.create_image(500, 440, anchor=NW, image=img_box)
-    canvas_b.create_image(515, 460, anchor=NW, image=img_suhu)
-    canvas_b.create_image(520, 510, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(570, 480, text=str(
+    canvas_b.create_image(500, 430, anchor=NW, image=img_box)
+    canvas_b.create_image(515, 450, anchor=NW, image=img_suhu)
+    canvas_b.create_image(520, 500, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(570, 470, text=str(
         tsk[1][0])+" °C", font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(567, 535, text=str(
+    canvas_b.create_text(567, 525, text=str(
         tsk[1][1])+" %", font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(527, 560, text='Kanan Bawah',
+                         font=("Helvetica", 20), fill="white", anchor="w")
 
     # sensor 3
-    canvas_b.create_image(20, 30, anchor=NW, image=img_box)
-    canvas_b.create_image(35, 50, anchor=NW, image=img_suhu)
-    canvas_b.create_image(40, 100, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(90, 75, text=str(
+    canvas_b.create_image(20, 20, anchor=NW, image=img_box)
+    canvas_b.create_image(35, 40, anchor=NW, image=img_suhu)
+    canvas_b.create_image(40, 90, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(90, 65, text=str(
         tsk[2][0])+" °C", font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(87, 125, text=str(
+    canvas_b.create_text(87, 115, text=str(
         tsk[2][1])+" %", font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(47, 150, text='Kiri Atas',
+                         font=("Helvetica", 20), fill="white", anchor="w")
 
     # sensor 4
-    canvas_b.create_image(500, 30, anchor=NW, image=img_box)
-    canvas_b.create_image(515, 50, anchor=NW, image=img_suhu)
-    canvas_b.create_image(520, 100, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(570, 70, text=str(
+    canvas_b.create_image(500, 20, anchor=NW, image=img_box)
+    canvas_b.create_image(515, 40, anchor=NW, image=img_suhu)
+    canvas_b.create_image(520, 90, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(570, 60, text=str(
         tsk[3][0])+" °C", font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(567, 120, text=str(
+    canvas_b.create_text(567, 110, text=str(
         tsk[3][1])+" %", font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(527, 150, text='Kanan Atas',
+                         font=("Helvetica", 20), fill="white", anchor="w")
 
     # sensor 5
-    canvas_b.create_image(260, 235, anchor=NW, image=img_box)
-    canvas_b.create_image(275, 255, anchor=NW, image=img_suhu)
-    canvas_b.create_image(280, 305, anchor=NW, image=img_kelembaban)
-    canvas_b.create_text(325, 275, text=str(
+    canvas_b.create_image(260, 225, anchor=NW, image=img_box)
+    canvas_b.create_image(275, 245, anchor=NW, image=img_suhu)
+    canvas_b.create_image(280, 295, anchor=NW, image=img_kelembaban)
+    canvas_b.create_text(325, 265, text=str(
         tsk[4][0])+" °C", font=("Helvetica", 20), fill="white", anchor="w")
-    canvas_b.create_text(322, 325, text=str(
+    canvas_b.create_text(322, 315, text=str(
         tsk[4][1])+" %", font=("Helvetica", 20), fill="white", anchor="w")
+    canvas_b.create_text(287, 355, text='Tengah',
+                         font=("Helvetica", 20), fill="white", anchor="w")
 
     canvas_b.create_image(730, 0, anchor=NW, image=img_pembatas)
 
@@ -463,7 +475,9 @@ def update_dashboard(tsk, score, tskr):
 
     canvas_b.create_text(940, 65, text="Kondisi Ruangan", font=(
         "Helvetica", 20), fill="white", anchor="s")
+        
 
+        
     if (score < 3.33):
         canvas_b.create_image(770, 111, anchor=NW, image=img_buruk)
         canvas_b.create_text(940, 166, text="Buruk", font=(
