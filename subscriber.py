@@ -499,6 +499,7 @@ def update_dashboard(tsk, score, tskr):
     canvas_b.create_image(957, 276, anchor=NW, image=img_circle)
     canvas_b.create_image(847, 306, anchor=NW, image=img_suhu)
     canvas_b.create_image(987, 306, anchor=NW, image=img_kelembaban)
+    
 
     canvas_b.create_text(832, 416, text=str(
         round(tskr[0], 2))+" °C", font=("Helvetica", 20), fill="white", anchor="w")
