@@ -1,0 +1,244 @@
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#include <PubSubClient.h>
+#include <DHT.h>
+#include <ArduinoJson.h>
+
+#define MAX_CHARACTER 50
+#define MQTT_SERVER "0.tcp.ap.ngrok.io"
+
+char ssid[] = "Wokwi-GUEST";
+char pass[] = "";
+
+int mqtt_port = 19776;
+
+char mqtt_topic1[] = "iot/sensor1";
+char mqtt_topic2[] = "iot/sensor2";
+char mqtt_topic3[] = "iot/sensor3";
+char mqtt_topic4[] = "iot/sensor4";
+char mqtt_topic5[] = "iot/sensor5";
+
+DHT dht1(2, DHT22); // kiri bawah
+DHT dht2(4, DHT22); // kanan bawah
+DHT dht3(13, DHT22); // kiri atas
+DHT dht4(12, DHT22); // kanan atas
+DHT dht5(14, DHT22); // tengah
+
+char lokasi_sensor1[] = "kiri bawah";
+char lokasi_sensor2[] = "kanan bawah";
+char lokasi_sensor3[] = "kiri atas";
+char lokasi_sensor4[] = "kanan atas";
+char lokasi_sensor5[] = "tengah";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void setupWifi(){
+  Serial.print("Menghubungkan ke ");
+  Serial.println(ssid);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, pass);
+
+  while (WiFi.status() != WL_CONNECTED){
+    delay(500);
+    Serial.print(".");
+  }
+
+  randomSeed(micros());
+
+  Serial.println("");
+  Serial.print("Terhubung ke ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+  Serial.println("");
+}
+
+void setupMqtt(){
+  while (!client.connected()){
+    Serial.println("Menghubungkan ke MQTT...");
+
+    String idClient = "client-";
+    idClient += String(random(0xffff), HEX);
+
+    if (client.connect(idClient.c_str())){
+      Serial.println("MQTT terhubung");
+      Serial.println();
+    }
+    else{
+      Serial.print("Error: ");
+      Serial.print(client.state());
+      Serial.println("Mencoba lagi...");
+      delay(5000);
+    }
+  }
+}
+
+void setup() {
+  pinMode(2, INPUT);
+
+  Serial.begin(9600);
+
+  setupWifi();
+
+  client.setServer(MQTT_SERVER, mqtt_port);
+
+  dht1.begin();
+  dht2.begin();
+  dht3.begin();
+  dht4.begin();
+  dht5.begin();
+}
+
+void loop() {
+  if (!client.connected()){
+    setupMqtt();
+  }
+
+  client.loop();
+
+  float h1 = dht1.readHumidity();
+  float c1 = dht1.readTemperature();
+  float h2 = dht2.readHumidity();
+  float c2 = dht2.readTemperature();
+  float h3 = dht3.readHumidity();
+  float c3 = dht3.readTemperature();
+  float h4 = dht4.readHumidity();
+  float c4 = dht4.readTemperature();
+  float h5 = dht5.readHumidity();
+  float c5 = dht5.readTemperature();
+
+  if (isnan(h1) || isnan(c1)) {
+    Serial.println(F("Sensor 1 tidak terbaca!"));
+    return;
+  }
+
+  if (isnan(h2) || isnan(c2)) {
+    Serial.println(F("Sensor 2 tidak terbaca!"));
+    return;
+  }
+
+  if (isnan(h3) || isnan(c3)) {
+    Serial.println(F("Sensor 3 tidak terbaca!"));
+    return;
+  }
+
+  if (isnan(h4) || isnan(c4)) {
+    Serial.println(F("Sensor 4 tidak terbaca!"));
+    return;
+  }
+
+  if (isnan(h5) || isnan(c5)) {
+    Serial.println(F("Sensor 5 tidak terbaca!"));
+    return;
+  }
+
+// publish sensor 1
+String celcius1 = String(c1).c_str();
+String humidity1 = String(h1).c_str();
+StaticJsonDocument<200> doc1;
+
+doc1["topic"] = mqtt_topic1;
+doc1["lokasi"] = lokasi_sensor1;
+doc1["suhu"] = celcius1;
+doc1["kelembapan"] = humidity1;
+
+String jsonString1;
+serializeJson(doc1, jsonString1);
+char json1[jsonString1.length() + 1];
+jsonString1.toCharArray(json1, jsonString1.length() + 1);
+
+if (client.publish(mqtt_topic1, json1)) {
+  Serial.println("Data berhasil dikirim ke topic " + String(mqtt_topic1));
+} else {
+  Serial.println("Gagal mengirim data ke topic " + String(mqtt_topic1));
+}
+
+// publish sensor 2
+String celcius2 = String(c2).c_str();
+String humidity2 = String(h2).c_str();
+StaticJsonDocument<200> doc2;
+
+doc2["topic"] = mqtt_topic2;
+doc2["lokasi"] = lokasi_sensor2;
+doc2["suhu"] = celcius2;
+doc2["kelembapan"] = humidity2;
+
+String jsonString2;
+serializeJson(doc2, jsonString2);
+char json2[jsonString2.length() + 1];
+jsonString2.toCharArray(json2, jsonString2.length() + 1);
+
+if (client.publish(mqtt_topic2, json2)) {
+  Serial.println("Data berhasil dikirim ke topic " + String(mqtt_topic2));
+} else {
+  Serial.println("Gagal mengirim data ke topic " + String(mqtt_topic2));
+}
+
+// publish sensor 3
+String celcius3 = String(c3).c_str();
+String humidity3 = String(h3).c_str();
+StaticJsonDocument<200> doc3;
+
+doc3["topic"] = mqtt_topic3;
+doc3["lokasi"] = lokasi_sensor3;
+doc3["suhu"] = celcius3;
+doc3["kelembapan"] = humidity3;
+
+String jsonString3;
+serializeJson(doc3, jsonString3);
+char json3[jsonString3.length() + 1];
+jsonString3.toCharArray(json3, jsonString3.length() + 1);
+
+if (client.publish(mqtt_topic3, json3)) {
+  Serial.println("Data berhasil dikirim ke topic " + String(mqtt_topic3));
+} else {
+  Serial.println("Gagal mengirim data ke topic " + String(mqtt_topic3));
+}
+
+// publish sensor 4
+String celcius4 = String(c4).c_str();
+String humidity4 = String(h4).c_str();
+StaticJsonDocument<200> doc4;
+
+doc4["topic"] = mqtt_topic4;
+doc4["lokasi"] = lokasi_sensor4;
+doc4["suhu"] = celcius4;
+doc4["kelembapan"] = humidity4;
+
+String jsonString4;
+serializeJson(doc4, jsonString4);
+char json4[jsonString4.length() + 1];
+jsonString4.toCharArray(json4, jsonString4.length() + 1);
+
+if (client.publish(mqtt_topic4, json4)) {
+  Serial.println("Data berhasil dikirim ke topic " + String(mqtt_topic4));
+} else {
+  Serial.println("Gagal mengirim data ke topic " + String(mqtt_topic4));
+}
+
+// publish sensor 5
+String celcius5 = String(c5).c_str();
+String humidity5 = String(h5).c_str();
+StaticJsonDocument<200> doc5;
+
+doc5["topic"] = mqtt_topic5;
+doc5["lokasi"] = lokasi_sensor5;
+doc5["suhu"] = celcius5;
+doc5["kelembapan"] = humidity5;
+
+String jsonString5;
+serializeJson(doc5, jsonString5);
+char json5[jsonString5.length() + 1];
+jsonString5.toCharArray(json5, jsonString5.length() + 1);
+
+if (client.publish(mqtt_topic5, json5)) {
+  Serial.println("Data berhasil dikirim ke topic " + String(mqtt_topic5));
+} else {
+  Serial.println("Gagal mengirim data ke topic " + String(mqtt_topic5));
+}
+
+delay(5000);
+}
